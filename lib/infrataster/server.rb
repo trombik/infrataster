@@ -142,7 +142,7 @@ module Infrataster
 
       Dir.mktmpdir do |dir|
         output = File.join(dir, 'ssh-config')
-        if ENV['BUNDLE_ORIG_PATH']
+        if defined?(Bundler)
           Bundler.with_clean_env do
             `vagrant ssh-config #{Shellwords.shellescape(name)} > #{Shellwords.shellescape(output)}`
           end
