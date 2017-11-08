@@ -101,6 +101,30 @@ module Infrataster
       result
     end
 
+    def ssh_exec_sudo(cmd, &block)
+      result = nil
+      ssh do |ssh|
+        prompt = "Password: "
+        cmd = "sudo -p '#{prompt}' #{cmd}"
+        ssh.open_channel do |channel|
+          channel.request_pty do |c, success|
+            raise "cannot allocate pty" unless success
+          end
+        end
+        channel.exec("#{cmd}") do |c1, success|
+          raise "cannot execute command: #{cmd}" unless success
+          channel.on_data do |c2, data|
+            if data.match(/^#{prompt}/)
+              channel.send_data "#{ENV["SUDO_PASSWORD"]}\n"
+            else
+              result += data
+            end
+          end
+        end
+      end
+      result
+    end
+
     def ssh_start_args
       @ssh_start_args ||= _ssh_start_args
     end
