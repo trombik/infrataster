@@ -104,7 +104,7 @@ module Infrataster
     def ssh_exec_sudo(cmd, &block)
       result = ""
       prompt = "Password: "
-      cmd = "sudo -p '#{Shellwords.escape(prompt)}' sh -c #{Shellwords.escape(cmd)}"
+      cmd = "sudo -p #{Shellwords.escape(prompt)} sh -c #{Shellwords.escape(cmd)}"
       ssh do |ssh|
         ssh.open_channel do |channel|
           channel.request_pty do |c, success|
