@@ -103,26 +103,28 @@ module Infrataster
 
     def ssh_exec_sudo(cmd, &block)
       result = ""
-      prompt = "Password: "
+      prompt = "Password:"
       cmd = "sudo -p #{Shellwords.escape(prompt)} sh -c #{Shellwords.escape(cmd)}"
       ssh do |ssh|
         ssh.open_channel do |channel|
           channel.request_pty do |c, success|
             raise "cannot allocate pty" unless success
           end
-          channel.on_data do |c, data|
-            if data.match(/^#{prompt}/)
-              channel.send_data("#{ENV["SUDO_PASSWORD"]}\n")
-            else
-              result += data
+          channel.exec cmd do |c, success|
+            raise "failed to run cmd" unless success
+            c.on_data do |c, data|
+              if data.match(/^#{prompt}/)
+                c.send_data("#{ENV["SUDO_PASSWORD"]}\n")
+              else
+                result += data.to_s
+              end
+            end
+            c.on_extended_data do |c, _type, data|
+              result += data.to_s
             end
           end
-          channel.on_extended_data do |c, _type, data|
-            result += data
-          end
-          channel.exec(cmd, &block)
-          channel.wait
         end
+        ssh.loop
       end
       # XXX replace special characters in pty
       #
